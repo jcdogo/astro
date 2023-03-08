@@ -4,6 +4,8 @@ import type { Readable } from 'stream';
 import { responseIterator } from './response-iterator';
 import type { Options } from './types';
 
+const clientAddressSymbol = Symbol.for('astro.clientAddress');
+
 export default function (app: NodeApp, mode: Options['mode']) {
 	return async function (
 		req: IncomingMessage,
@@ -15,6 +17,9 @@ export default function (app: NodeApp, mode: Options['mode']) {
 				mode === 'standalone' ? app.match(req, { matchNotFound: true }) : app.match(req);
 			if (route) {
 				try {
+					const ip = req.socket.remoteAddress;
+					Reflect.set(req, clientAddressSymbol, ip);
+			
 					const response = await app.render(req);
 					await writeWebResponse(app, res, response);
 				} catch (err: unknown) {
